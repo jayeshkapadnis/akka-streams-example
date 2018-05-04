@@ -1,7 +1,6 @@
 package com.hashmapinc.source;
 
 import akka.actor.ActorRef;
-import akka.japi.JavaPartialFunction;
 import akka.stream.Attributes;
 import akka.stream.Outlet;
 import akka.stream.SourceShape;
