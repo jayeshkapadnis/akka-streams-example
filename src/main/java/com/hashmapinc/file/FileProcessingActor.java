@@ -47,6 +47,7 @@ public class FileProcessingActor extends AbstractLoggingActor{
                     log().error("Error occurred while file processing", error);
                 }
             }
+            getContext().stop(self());
         });
     }
 
