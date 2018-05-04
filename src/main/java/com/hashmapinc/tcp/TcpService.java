@@ -18,7 +18,7 @@ public class TcpService implements ServiceApi {
     private ActorRef tcpServer;
 
     public void init() throws Exception {
-        this.tcpServer = system.actorOf(Props.create(TcpServerActor.class, new TcpServerActor.ActorCreator().create()));
+        this.tcpServer = system.actorOf(Props.create(TcpServerActor.class));
     }
 
     @Override

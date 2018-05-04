@@ -16,10 +16,10 @@ import com.hashmapinc.tcp.TcpServerActor;
 public class TestTcpServerActor {
 
     public static void main(String[] args) throws Exception {
-        ActorSystem system = ActorSystem.create("TCP System");
+        ActorSystem system = ActorSystem.create("TCP-System");
         Materializer mat = ActorMaterializer.create(system);
 
-        ActorRef tcpServer = system.actorOf(Props.create(TcpServerActor.class, new TcpServerActor.ActorCreator().create()));
+        ActorRef tcpServer = system.actorOf(Props.create(TcpServerActor.class));
 
         MessageSource source = new MessageSource(tcpServer);
         Source<ByteString, NotUsed> tcpSource = Source.fromGraph(source);
@@ -30,6 +30,6 @@ public class TestTcpServerActor {
                 Framing.delimiter(ByteString.fromString(System.lineSeparator()), 512, FramingTruncation.ALLOW)
         );
 
-        returnSource.runForeach(System.out::println, mat);
+        tcpSource.runForeach(System.out::println, mat);
     }
 }

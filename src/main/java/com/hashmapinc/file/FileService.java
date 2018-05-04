@@ -18,7 +18,7 @@ public class FileService implements ServiceApi {
     @Override
     public Source<ByteString, NotUsed> buildSource(SourceConfig conf) throws Exception {
         String filePath = conf.getProperty("file.path");
-        ActorRef fileReader = system.actorOf(Props.create(FileProcessingActor.class, new FileProcessingActor.ActorCreator(filePath).create()));
+        ActorRef fileReader = system.actorOf(Props.create(FileProcessingActor.class, filePath));
         MessageSource source = new MessageSource(fileReader);
         Source<ByteString, NotUsed> fileSource = Source.fromGraph(source);
         return fileSource.via(

@@ -50,17 +50,4 @@ public class FileProcessingActor extends AbstractLoggingActor{
             getContext().stop(self());
         });
     }
-
-    public static class ActorCreator implements Creator<FileProcessingActor> {
-        private static final long serialVersionUID = 1L;
-        private final String path;
-
-        public ActorCreator(String path){
-            this.path = path;
-        }
-        @Override
-        public FileProcessingActor create() throws Exception {
-            return new FileProcessingActor(path);
-        }
-    }
 }

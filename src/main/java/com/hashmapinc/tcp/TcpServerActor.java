@@ -25,7 +25,7 @@ public class TcpServerActor extends AbstractLoggingActor{
     private Map<String, ActorRef> channels;
     private Map<UUID, ActorRef> handlers;
 
-    private TcpServerActor(){
+    public TcpServerActor(){
         channels = new HashMap<>();
         handlers = new HashMap<>();
     }
@@ -51,12 +51,13 @@ public class TcpServerActor extends AbstractLoggingActor{
                     getContext().stop(self());
                 }).match(Connected.class, c -> {
                     log().info("Received Connected message: [{}]", c);
+                    ActorRef sender = getSender();
                     UUID id = UUID.randomUUID();
                     final ActorRef handler = getContext().actorOf(
                             Props.create(TcpMessageHandler.class), id.toString());
                     handlers.put(id, handler);
                     handler.tell(new AssignChannels(channels), self());
-                    getSender().tell(TcpMessage.register(handler), getSelf());
+                    sender.tell(TcpMessage.register(handler), getSelf());
                 }).match(AssignStageActor.class, a ->{
                     channels.putIfAbsent(a.getName(), a.getStageActor());
                 }).match(RemoveStageActor.class, r -> {
@@ -67,14 +68,5 @@ public class TcpServerActor extends AbstractLoggingActor{
                     handlers.remove(h.getName());
                 }).matchAny(o -> log().warning("Unhandled message: [{}]", o))
                 .build();
-    }
-
-    public static class ActorCreator implements Creator<TcpServerActor>{
-        private static final long serialVersionUID = 1L;
-
-        @Override
-        public TcpServerActor create() throws Exception {
-            return new TcpServerActor();
-        }
     }
 }

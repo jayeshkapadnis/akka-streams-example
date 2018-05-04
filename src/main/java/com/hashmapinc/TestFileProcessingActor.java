@@ -20,7 +20,7 @@ public class TestFileProcessingActor {
         ActorSystem system = ActorSystem.create("File Stream Test");
         Materializer mat = ActorMaterializer.create(system);
 
-        ActorRef fileReader = system.actorOf(Props.create(FileProcessingActor.class, new FileProcessingActor.ActorCreator(filePath).create()));
+        ActorRef fileReader = system.actorOf(Props.create(FileProcessingActor.class, filePath));
 
         MessageSource source = new MessageSource(fileReader);
         Source<ByteString, NotUsed> fileSource = Source.fromGraph(source);

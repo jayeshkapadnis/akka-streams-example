@@ -1,6 +1,7 @@
 package com.hashmapinc.source;
 
 import akka.actor.ActorRef;
+import akka.japi.JavaPartialFunction;
 import akka.stream.Attributes;
 import akka.stream.Outlet;
 import akka.stream.SourceShape;
@@ -24,31 +25,34 @@ public class MessageSource extends GraphStage<SourceShape<ByteString>> {
     public final Outlet<ByteString> out = Outlet.create("MessageSource.out");
     private final SourceShape<ByteString> shape = SourceShape.of(out);
     private final ActorRef sourceActor;
-    private final Queue<ByteString> messages;
 
 
     public MessageSource(ActorRef sourceActor){
         this.sourceActor = sourceActor;
-        this.messages = new LinkedList<>();
     }
 
     @Override
     public GraphStageLogic createLogic(Attributes inheritedAttributes) throws Exception {
-        new GraphStageLogic(shape()){
+        return new GraphStageLogic(shape()){
             private final String stageActorId = UUID.randomUUID().toString();
+            private final Queue<ByteString> messages = new LinkedList<>();
 
-            private StageActor self = getStageActor(new AbstractFunction1<Tuple2<ActorRef, Object>, BoxedUnit>() {
-                @Override
-                public BoxedUnit apply(Tuple2<ActorRef, Object> v1) {
-                    if(v1._2 instanceof ByteString){
-                        messages.add((ByteString)v1._2);
-                        pump();
-                    }else if(v1._2 instanceof StreamCompleted){
-                        //Need to find way to terminate this graph stage
+            private StageActor self;
+
+            private AbstractFunction1<Tuple2<ActorRef, Object>, BoxedUnit> onMessage() {
+                return new AbstractFunction1<Tuple2<ActorRef, Object>, BoxedUnit>() {
+                    @Override
+                    public BoxedUnit apply(Tuple2<ActorRef, Object> v1) {
+                        if(v1._2 instanceof ByteString){
+                            messages.add((ByteString)v1._2);
+                            pump();
+                        }else if(v1._2 instanceof StreamCompleted){
+                            //Need to find way to terminate this graph stage
+                        }
+                        return BoxedUnit.UNIT;
                     }
-                    return BoxedUnit.UNIT;
-                }
-            });
+                };
+            }
 
             {
                 setHandler(out, new AbstractOutHandler() {
@@ -66,6 +70,7 @@ public class MessageSource extends GraphStage<SourceShape<ByteString>> {
 
             @Override
             public void preStart() throws Exception {
+                self = getStageActor(onMessage());
                 sourceActor.tell(new AssignStageActor(stageActorName(), self.ref()), ActorRef.noSender());
             }
 
@@ -80,8 +85,6 @@ public class MessageSource extends GraphStage<SourceShape<ByteString>> {
                 }
             }
         };
-
-        return null;
     }
 
     @Override
