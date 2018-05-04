@@ -1,4 +1,4 @@
-package com.hashmapinc.tcp;
+package com.hashmapinc.tcp.server;
 
 import akka.actor.AbstractLoggingActor;
 import akka.actor.ActorRef;

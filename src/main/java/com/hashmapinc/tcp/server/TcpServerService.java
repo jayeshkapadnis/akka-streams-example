@@ -1,4 +1,4 @@
-package com.hashmapinc.tcp;
+package com.hashmapinc.tcp.server;
 
 import akka.NotUsed;
 import akka.actor.ActorRef;
@@ -12,9 +12,9 @@ import com.hashmapinc.api.ServiceApi;
 import com.hashmapinc.api.SourceConfig;
 import com.hashmapinc.source.MessageSource;
 
-public class TcpService implements ServiceApi {
+public class TcpServerService implements ServiceApi {
 
-    private static ActorSystem system = ActorSystem.create("TCP System");
+    private static ActorSystem system = ActorSystem.create("TCP-SERVER");
     private ActorRef tcpServer;
 
     public void init() throws Exception {

@@ -1,4 +1,4 @@
-package com.hashmapinc.tcp;
+package com.hashmapinc.tcp.server;
 
 import akka.actor.AbstractLoggingActor;
 import akka.actor.ActorRef;
@@ -8,7 +8,6 @@ import akka.io.Tcp.Bound;
 import akka.io.Tcp.CommandFailed;
 import akka.io.Tcp.Connected;
 import akka.io.TcpMessage;
-import akka.japi.Creator;
 import com.hashmapinc.messages.AssignChannels;
 import com.hashmapinc.messages.AssignStageActor;
 import com.hashmapinc.messages.RemoveHandler;
