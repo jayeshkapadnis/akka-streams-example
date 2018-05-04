@@ -4,17 +4,31 @@ import akka.actor.AbstractLoggingActor;
 import akka.actor.ActorRef;
 import akka.actor.Props;
 import akka.io.Tcp;
-import akka.io.Tcp.*;
+import akka.io.Tcp.Bound;
+import akka.io.Tcp.CommandFailed;
+import akka.io.Tcp.Connected;
 import akka.io.TcpMessage;
 import akka.japi.Creator;
+import com.hashmapinc.messages.AssignChannels;
 import com.hashmapinc.messages.AssignStageActor;
+import com.hashmapinc.messages.RemoveHandler;
+import com.hashmapinc.messages.RemoveStageActor;
 
 import java.net.InetSocketAddress;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
 
 public class TcpServerActor extends AbstractLoggingActor{
 
     private ActorRef tcpActor;
-    private ActorRef channel;
+    private Map<String, ActorRef> channels;
+    private Map<UUID, ActorRef> handlers;
+
+    private TcpServerActor(){
+        channels = new HashMap<>();
+        handlers = new HashMap<>();
+    }
 
     @Override
     public void preStart() throws Exception {
@@ -37,12 +51,20 @@ public class TcpServerActor extends AbstractLoggingActor{
                     getContext().stop(self());
                 }).match(Connected.class, c -> {
                     log().info("Received Connected message: [{}]", c);
+                    UUID id = UUID.randomUUID();
                     final ActorRef handler = getContext().actorOf(
-                            Props.create(TcpMessageHandler.class));
-                    handler.tell(new AssignStageActor(channel), self());
+                            Props.create(TcpMessageHandler.class), id.toString());
+                    handlers.put(id, handler);
+                    handler.tell(new AssignChannels(channels), self());
                     getSender().tell(TcpMessage.register(handler), getSelf());
                 }).match(AssignStageActor.class, a ->{
-                    channel = a.getStageActor();
+                    channels.putIfAbsent(a.getName(), a.getStageActor());
+                }).match(RemoveStageActor.class, r -> {
+                    channels.remove(r.getName());
+                    //notify all handlers about channel removal
+                    handlers.forEach((id, c) -> c.tell(r, self()));
+                }).match(RemoveHandler.class, h -> {
+                    handlers.remove(h.getName());
                 }).matchAny(o -> log().warning("Unhandled message: [{}]", o))
                 .build();
     }

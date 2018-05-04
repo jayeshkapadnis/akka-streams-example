@@ -9,6 +9,7 @@ import akka.stream.stage.GraphStage;
 import akka.stream.stage.GraphStageLogic;
 import akka.util.ByteString;
 import com.hashmapinc.messages.AssignStageActor;
+import com.hashmapinc.messages.RemoveStageActor;
 import com.hashmapinc.messages.StreamCompleted;
 import scala.Tuple2;
 import scala.runtime.AbstractFunction1;
@@ -16,6 +17,7 @@ import scala.runtime.BoxedUnit;
 
 import java.util.LinkedList;
 import java.util.Queue;
+import java.util.UUID;
 
 public class MessageSource extends GraphStage<SourceShape<ByteString>> {
 
@@ -33,6 +35,8 @@ public class MessageSource extends GraphStage<SourceShape<ByteString>> {
     @Override
     public GraphStageLogic createLogic(Attributes inheritedAttributes) throws Exception {
         new GraphStageLogic(shape()){
+            private final String stageActorId = UUID.randomUUID().toString();
+
             private StageActor self = getStageActor(new AbstractFunction1<Tuple2<ActorRef, Object>, BoxedUnit>() {
                 @Override
                 public BoxedUnit apply(Tuple2<ActorRef, Object> v1) {
@@ -56,8 +60,18 @@ public class MessageSource extends GraphStage<SourceShape<ByteString>> {
             }
 
             @Override
+            public String stageActorName() {
+                return stageActorId;
+            }
+
+            @Override
             public void preStart() throws Exception {
-                sourceActor.tell(new AssignStageActor(self.ref()), ActorRef.noSender());
+                sourceActor.tell(new AssignStageActor(stageActorName(), self.ref()), ActorRef.noSender());
+            }
+
+            @Override
+            public void postStop() throws Exception {
+                sourceActor.tell(new RemoveStageActor(stageActorName()), ActorRef.noSender());
             }
 
             private void pump(){

@@ -14,14 +14,23 @@ import com.hashmapinc.source.MessageSource;
 
 public class TcpService implements ServiceApi {
 
-    private final ActorSystem system = ActorSystem.create("TCP System");
+    private static ActorSystem system = ActorSystem.create("TCP System");
+    private ActorRef tcpServer;
+
+    public void init() throws Exception {
+        this.tcpServer = system.actorOf(Props.create(TcpServerActor.class, new TcpServerActor.ActorCreator().create()));
+    }
 
     @Override
     public Source<ByteString, NotUsed> buildSource(SourceConfig conf) throws Exception{
-        //COnf can contain details of server
-        ActorRef tcpServer = system.actorOf(Props.create(TcpServerActor.class, new TcpServerActor.ActorCreator().create()));
+        //This will create once server per call, to avoid this instantiate one actor at class level
+        //Don't store channel in TcpServerActor but pass it to handler directly as for each connection
+        //Have a list of channels in Handler so that multiple Sinks can subscribe to it
 
-        MessageSource source = new MessageSource(tcpServer);
+        //Conf can contain details of server
+        //ActorRef tcpServer = system.actorOf(Props.create(TcpServerActor.class, new TcpServerActor.ActorCreator().create()));
+
+        MessageSource source = new MessageSource(this.tcpServer);
         Source<ByteString, NotUsed> tcpSource = Source.fromGraph(source);
 
         return tcpSource.via(
